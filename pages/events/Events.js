@@ -139,7 +139,7 @@ function Events() {
                     <button
                       onClick={() => {
                         window.scrollTo(0, 0);
-                        router.push(`/livescore/${item.nameid.toLowerCase()}`);
+                        router.push(`/scores/${item.nameid.toLowerCase()}`);
                       }}
                       className={`${baseButtonClasses} ${buttonThemeClass}`}
                     >
@@ -148,7 +148,7 @@ function Events() {
                     <button
                       onClick={() => {
                         window.scrollTo(0, 0);
-                        router.push(`/Fixtures/Fixtures/${item.nameid.toLowerCase()}`);
+                        router.push(`/Fixtures/${item.nameid.toLowerCase()}`);
                       }}
                       className={`${baseButtonClasses} ${buttonThemeClass}`}
                     >

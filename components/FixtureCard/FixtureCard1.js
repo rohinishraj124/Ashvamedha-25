@@ -1,7 +1,7 @@
 import React from 'react'
 import vs from "../../assests/demoPhotos/vs2.png";
-import { collegeList } from '../../constants';
-import "./FixtureCard1.scss"
+import { collegeList } from '../../constant';
+// import "./FixtureCard1.scss"
 
 function FixtureCard1(props) {
     const getCollegeLogo = (collegeName) => {
