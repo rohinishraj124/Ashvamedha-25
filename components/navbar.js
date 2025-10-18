@@ -103,7 +103,7 @@ function Navbar() {
                 </a>
             </li>
             <li>
-                <button onClick={() => handleNavigation('/admin')} className={baseLinkClasses}>
+                <button onClick={() => handleNavigation('/Admin/home')} className={baseLinkClasses}>
                   Admin
                 </button>
             </li>
