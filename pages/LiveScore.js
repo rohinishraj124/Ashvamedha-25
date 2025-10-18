@@ -3,70 +3,81 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams } from "next/navigation"; // Use next/navigation for App Router, or next/router for Pages Router
 import { useDispatch } from "react-redux";
-import axios from "axios";
+import apiClient from '../lib/axios'; // Import the configured axios instance
 
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
 import ScoreCard from "../components/ScoreCard/ScoreCard.js";
-import { server } from "../constant";
+// Removed 'server' import as it's replaced by apiClient
 import { setLoading } from "../redux/appSlice.js";
-import live from "../assests/demoPhotos/live.png";
+import live from "../assests/demoPhotos/live.png"; // Ensure this path is correct
 
 function LiveScorePage() {
   const [liveScore, setLiveScore] = useState([]);
   const [text, setText] = useState("Searching for live matches ...");
   const dispatch = useDispatch();
-  const params = useParams();
-  
-  // Use a fallback for sportname to prevent errors
+  const params = useParams(); // Use useParams hook
+
+  // Safely get sportname from params
   const sportname = params?.sportname || "";
 
-  // Memoize the fetch function to prevent re-creation on every render
+  // Memoize the fetch function
   const fetchLiveScore = useCallback(async () => {
-    if (!sportname) return; // Don't fetch if sportname is not available yet
+    if (!sportname) return;
     try {
-      const result = await axios.post(`${server}/sport/getlivescore`, {
+      // Use apiClient and the correct relative path
+      const result = await apiClient.post(`/score/getlivescore`, {
         sportname: sportname.toLowerCase(),
       });
-      setLiveScore(result.data.result.liveScoreInfo);
+      // Access data based on the success wrapper structure
+      setLiveScore(result.data.result?.liveScoreInfo || []);
     } catch (err) {
       console.error("Error fetching live score:", err);
-      setLiveScore([]); // Clear scores on error
+       // Handle cases where the API returns a 404 specifically
+       if (err.response && err.response.status === 404) {
+         setLiveScore([]); // No scores found is not necessarily a console error
+         setText("No live matches are currently in progress."); // Update text immediately
+       } else {
+         setLiveScore([]); // Clear scores on other errors
+       }
     }
-  }, [sportname]);
+  }, [sportname]); // Dependency is sportname
 
   useEffect(() => {
+    // Only set loading initially
     dispatch(setLoading(true));
 
-    // Initial fetch
-    fetchLiveScore();
+    // Initial fetch, then set loading to false
+    fetchLiveScore().finally(() => {
+      dispatch(setLoading(false));
+    });
 
-    // Set up the interval to poll for new scores
-    const interval = setInterval(fetchLiveScore, 2000); // Polling every 2 seconds
+    // Set up polling interval
+    const interval = setInterval(fetchLiveScore, 2000); // Poll every 2 seconds
 
-    // Set up a timeout to change the message if no scores are found
+    // Set up timeout for fallback text
     const timeout = setTimeout(() => {
+      // Check current state when timeout executes
       if (liveScore.length === 0) {
         setText("No live matches are currently in progress.");
       }
     }, 4000);
-    
-    dispatch(setLoading(false));
 
-    // Cleanup function to clear interval and timeout when the component unmounts
+    // Cleanup interval and timeout on unmount
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [fetchLiveScore, dispatch, liveScore.length]);
+    // Dependencies: fetchLiveScore (stable via useCallback) and dispatch (stable)
+  }, [fetchLiveScore, dispatch]); // Removed liveScore.length
 
   return (
     <div className="flex w-full flex-col items-center justify-center">
       <Navbar />
       <div className="mb-10 mt-5 w-full text-neutral-800 uppercase">
-        
+
         {/* Live Score Header */}
         {liveScore.length > 0 && (
           <div className="mb-5 flex h-[90px] items-center justify-center font-extrabold text-white">

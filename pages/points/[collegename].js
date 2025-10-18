@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
+import apiClient from "../../lib/axios"; // Import apiClient
 import Navbar from "../../components/navbar";
 import Footer from "../../components/footer";
 import PointInfo from "../../components/PointInfo/PointInfo.js";
@@ -11,7 +12,7 @@ import { setLoading } from "../../redux/appSlice.js";
 const tableHead = {
   sportName: "SPORT",
   category: "CATEGORY",
-  college1: "OPPONENT",
+  college1Name: "OPPONENT", // Use college1Name to match data structure
   point: "POINTS",
 };
 
@@ -19,9 +20,39 @@ function PointDetailsPage() {
   const dispatch = useDispatch();
   const isLoading = useSelector((state) => state?.app?.isLoading ?? false);
   const [pointinfo, setPointinfo] = useState([]);
+  const [isClient, setIsClient] = useState(false);
 
   const params = useParams() || {};
-  const collegename = params?.collegename ?? "";
+  // Decode the college name from the URL
+  const collegename = params?.collegename ? decodeURIComponent(params.collegename) : "";
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const fetchPointDetails = useCallback(async () => {
+    if (!collegename) return;
+    dispatch(setLoading(true));
+    try {
+      const response = await apiClient.post('/college/match-details', {
+        collegeName: collegename,
+      });
+      // The backend now returns the detailed match list
+      setPointinfo(response.data.result || []);
+    } catch (error) {
+      console.error("Error fetching point details:", error);
+      setPointinfo([]); // Clear data on error
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }, [collegename, dispatch]);
+
+  useEffect(() => {
+    // Only fetch data once the component has mounted and the collegename is available
+    if (isClient) {
+      fetchPointDetails();
+    }
+  }, [isClient, fetchPointDetails]);
 
   const animatedTextStyle = useMemo(
     () => ({
@@ -33,55 +64,41 @@ function PointDetailsPage() {
     []
   );
 
-  useEffect(() => {
-    if (!collegename) return;
-    const fetchMockData = async () => {
-      dispatch(setLoading(true));
-      // simulate network delay
-      await new Promise((res) => setTimeout(res, 1000));
-
-      // mock result
-      const mockData = [
-        { sportName: "Football", category: "Men", college1: "ABC", point: 3 },
-        { sportName: "Basketball", category: "Women", college1: "XYZ", point: 2 },
-        { sportName: "Cricket", category: "Men", college1: "PQR", point: 1 },
-      ];
-
-      setPointinfo(mockData);
-      dispatch(setLoading(false));
-    };
-
-    fetchMockData();
-
-  }, [collegename, dispatch]);
+  if (!isClient || (isLoading && pointinfo.length === 0)) {
+     return (<div className="w-full bg-[#151515]"> <Navbar /> <div className="flex h-[85vh] items-center justify-center text-white">Loading...</div> <Footer /> </div>);
+  }
 
   if (!isLoading && pointinfo.length === 0) {
-    return (<div className="w-full"> <Navbar /> <div className="flex h-[85vh] items-center justify-center text-center text-orange-600"> <h2
-      className="font-['bungee',_sans-serif] text-5xl font-normal uppercase text-white animate-shadows animate-move tracking-[0.4rem] md:text-7xl"
+    return (<div className="w-full bg-[#151515]"> <Navbar /> <div className="flex h-[85vh] items-center justify-center text-center text-orange-600"> <h2
+      className="font-['bungee',_sans-serif] text-3xl font-normal uppercase text-white animate-shadows animate-move tracking-[0.4rem] md:text-5xl"
       style={animatedTextStyle}
     >
-      Your team is yet to score! </h2> </div> <Footer /> </div>
+      This team is yet to score! </h2> </div> <Footer /> </div>
     );
   }
 
-  return (<div className="w-full"> <Navbar /> <div className="min-h-screen"> <h2 className="mb-8 mt-6 text-center text-3xl md:text-5xl"> <span className="mr-2.5 text-orange-600">POINTS</span> <span className="text-white">TABLE</span> </h2>
+  return (
+    <div className="w-full bg-[#151515]">
+      <Navbar />
+      <div className="min-h-screen">
+        <h2 className="mb-8 mt-6 text-center text-3xl uppercase md:text-5xl">
+          <span className="mr-2.5 text-orange-600">{collegename}</span>
+          <span className="text-white">POINTS TABLE</span>
+        </h2>
 
-    {!isLoading && (
-      <div className="mb-5 flex min-h-full flex-col items-center justify-start text-white">
-        <PointInfo gameInfo={tableHead} />
-        {pointinfo.map((item, index) => (
-          <PointInfo
-            gameInfo={item}
-            key={index}
-            serialNo={index}
-          />
-        ))}
+        <div className="mb-5 flex min-h-full flex-col items-center justify-start text-white">
+          <PointInfo gameInfo={tableHead} />
+          {pointinfo.map((item, index) => (
+            <PointInfo
+              gameInfo={item}
+              key={item._id || index} // Use unique _id from match object
+              serialNo={index} // serialNo is not used by PointInfo but kept for consistency
+            />
+          ))}
+        </div>
       </div>
-    )}
-  </div>
-    <Footer />
-  </div>
-
+      <Footer />
+    </div>
   );
 }
 

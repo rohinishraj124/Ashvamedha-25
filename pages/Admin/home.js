@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/router'; // Correct import for App Router
 import { useLogin } from '../../context/loginContextProvider';
 import Navbar from '../../components/navbar';
 // import Loader from '../../components/Loader/Loader';
@@ -32,7 +32,7 @@ const LogoutModal = ({ onConfirm, onCancel }) => (
 
 function AdminHome() {
   const loginCtx = useLogin();
-  const router = useRouter();
+  const router = useRouter(); // Use useRouter from next/router
   const [loading, setLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -54,7 +54,7 @@ function AdminHome() {
     // You can replace the alert with a more modern toast notification if you have one
     alert("Logged out successfully");
   };
-  
+
   // Base classes for all buttons and links for consistency
   const baseButtonClasses = "block w-full rounded-md bg-warm px-5 py-3 text-center font-bold text-white transition-colors duration-300 hover:bg-warm-hover";
 
@@ -71,16 +71,20 @@ function AdminHome() {
               <div className="flex flex-col items-center gap-y-4">
                 <h2 className="text-2xl font-bold">You are Logged In as <span className="text-warm">{loginCtx.sport}</span> Admin</h2>
                 <p className="text-gray-300">Note: You can only make changes for {loginCtx.sport}.</p>
-                <Link href={`/livescore/${loginCtx.sport}`} className={baseButtonClasses}>
+                {/* Updated Link href */}
+                <Link href={`/scores/${loginCtx.sport}`} className={baseButtonClasses}>
                   See Livescore ({loginCtx.sport})
                 </Link>
-                <Link href="/setlivescore" className={baseButtonClasses}>
+                {/* Updated Link href */}
+                <Link href="/SetLiveScore/SetLiveScore" className={baseButtonClasses}>
                   Create New Live Score
                 </Link>
-                <Link href="/updatelivescore" className={baseButtonClasses}>
+                {/* Updated Link href */}
+                <Link href="/SetLiveScore/UpdateLiveScore" className={baseButtonClasses}>
                   Update Live Score
                 </Link>
-                <Link href="/updatepointstable" className={baseButtonClasses}>
+                {/* Updated Link href */}
+                <Link href="/SetLiveScore/SetPointTableScore" className={baseButtonClasses}>
                   Set Points Table Score
                 </Link>
                 <button onClick={handleLogout} className={`${baseButtonClasses} mt-4 bg-red-600 hover:bg-red-500`}>
@@ -101,9 +105,9 @@ function AdminHome() {
 
       {/* Conditionally render the logout modal */}
       {showLogoutModal && (
-        <LogoutModal 
-          onConfirm={confirmLogout} 
-          onCancel={() => setShowLogoutModal(false)} 
+        <LogoutModal
+          onConfirm={confirmLogout}
+          onCancel={() => setShowLogoutModal(false)}
         />
       )}
     </>
